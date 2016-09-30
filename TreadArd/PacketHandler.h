@@ -46,17 +46,17 @@ void GetCommandPacket()
     // Data is available on serial line
     if(Serial.available() > 0)
     {
-        CURRENT_CMD_PACKET->cmd = Serial.read();
-        int dataByte = Serial.read();
-        if(dataByte <= MAX_CMD_VAL)
+        int cmdByte = Serial.read();
+        if(cmdByte <= MAX_CMD_VAL)
         {
-            CURRENT_CMD_PACKET->data = Serial.read();
+            CURRENT_CMD_PACKET->cmd = (Command)(Serial.read());
         }
         // Recieved command was not valid
         else
         {
             // @TODO: Handle error for invalid command
         }
+        CURRENT_CMD_PACKET->data = Serial.read();
     }
     // Data is not available on serial line
     else
