@@ -1,7 +1,0 @@
-void turnON (void){
-    digitalWrite(13, HIGH);
-}
-
-void turnOFF (void){
-    digitalWrite(13, HIGH);
-}

@@ -1,3 +1,5 @@
+#include "Arduino.h"
+
 /* To test motors use the following API's:
  * void moveForward (int pwmLvl);
  * void moveBackward (int pwmLvl);
