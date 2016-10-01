@@ -1,7 +1,7 @@
 #ifndef PACKET_HANDLER
 #define PACKET_HANDLER
 
-#include "Arduino.h"
+#include "MotorApps.h"
 
 // Packet Handler namespace to hold everything relavent to the Packet Handler
 namespace PacketHandler
@@ -63,6 +63,37 @@ void GetCommandPacket()
     {
         // @TODO: Handle error for no available data on serial line
     }
+}
+
+void RunCommand()
+{
+    switch(CURRENT_CMD_PACKET->cmd)
+    {
+        case MOVE_FORWARD:
+            moveForward(255);
+            break;
+        case MOVE_BACKWARD:
+            moveBackward(255);
+            break;
+        case TURN_C:
+            turnCenterRight(255);
+            break;
+        case TURN_CC:
+            turnCenterLeft(255);
+            break;
+        case STOP:
+            motorStop();
+            break;
+        default:
+            motorStop();
+            // @TODO: throw some error?
+            break;
+    }
+};
+
+// Send any data back to Rasberry Pi
+void SendPacket()
+{
 }
 
 }

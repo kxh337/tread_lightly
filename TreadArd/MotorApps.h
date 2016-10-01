@@ -1,4 +1,5 @@
-#include "Arduino.h"
+#ifndef MOTOR_APPS
+#define MOTOR_APPS
 
 /* To test motors use the following API's:
  * void moveForward (int pwmLvl);
@@ -69,3 +70,5 @@ void turnCenterLeft (int pwmLvl){
     leftMotorBackward(pwmLvl);
     rightMotorForward(pwmLvl);
 }
+
+#endif
