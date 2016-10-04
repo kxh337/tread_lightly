@@ -44,12 +44,12 @@ void StartSerial()
 void GetCommandPacket() 
 {
     // Data is available on serial line
-    if(Serial.available() > 0)
+    if(Serial.available() >= 2 )
     {
         int cmdByte = Serial.read();
         if(cmdByte <= MAX_CMD_VAL)
         {
-            CURRENT_CMD_PACKET->cmd = (Command)(Serial.read());
+            CURRENT_CMD_PACKET->cmd = (Command)(cmdByte);
         }
         // Recieved command was not valid
         else
@@ -70,16 +70,16 @@ void RunCommand()
     switch(CURRENT_CMD_PACKET->cmd)
     {
         case MOVE_FORWARD:
-            moveForward(255);
+            moveForward(CURRENT_CMD_PACKET->data);
             break;
         case MOVE_BACKWARD:
-            moveBackward(255);
+            moveBackward(CURRENT_CMD_PACKET->data);
             break;
         case TURN_C:
-            turnCenterRight(255);
+            turnCenterRight(CURRENT_CMD_PACKET->data);
             break;
         case TURN_CC:
-            turnCenterLeft(255);
+            turnCenterLeft(CURRENT_CMD_PACKET->data);
             break;
         case STOP:
             motorStop();
