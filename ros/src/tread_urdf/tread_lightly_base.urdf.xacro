@@ -1,0 +1,222 @@
+<?xml version="1.0"?>
+<robot
+  xmlns:xacro="http://www.ros.org/wiki/xacro"
+  name="tread_lightly" >
+      
+  <xacro:property name="wheel_size_y" value="0.010" />
+  <xacro:property name="wheel_radius" value="0.030" />
+  <xacro:property name="wheel_offset_y" value="${bodywidth/2 + wheel_size_y/2}" />
+  <xacro:property name="wheel_offset_z_from_base_link" value="${bodyheight/2 - bodyheight/2}" />   
+  <xacro:property name="wheel_spacing" value="0.1055" /> 
+
+  <!-- define the base-link origin to lie at floor level, between the drive wheels-->
+   <!--main body is a simple box; origin is a center of box-->
+  <xacro:property name="bodylen" value="0.200" />
+  <xacro:property name="bodywidth" value="0.055" />
+  <xacro:property name="bodyheight" value="0.050" />
+  <xacro:property name="default_mass" value="1.5" />
+  
+  <xacro:property name="M_PI" value="3.1415926535897931" />
+    
+  <!--******************* Start Wheel macro ************************-->
+  <xacro:macro name="tracked_wheel" params="parent prefix offset_x offset_y offset_z">
+    <joint name="${prefix}" type="continuous">
+      <origin xyz="${offset_x } ${offset_y} ${offset_z}" rpy="0 0 0" />
+      <parent link="${parent}" />
+      <child link="${prefix}_wheel_link" />
+      <axis xyz="0 1 0" />
+      <limit effort="100" velocity="100" />
+      <joint_properties damping="0.0" friction="0.0" />
+      <anchor xyz="0 0 0" />
+    </joint>    
+    
+    <link name="${prefix}_wheel_link">
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz=" 0 0 0 " />
+        <inertia  ixx="0.00012411765597" ixy="0.0" ixz="0.0"
+                 iyy="0.00015218160428" iyz="0.0"
+                 izz="0.00011763977943" />
+      </inertial>
+        
+      <collision>
+        <origin xyz="0 0 0" rpy="${-M_PI/2} 0 0" />
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_size_y}" />
+        </geometry>
+      </collision>
+      <visual>
+        <origin xyz="0 0 0" rpy="${-M_PI/2} 0 0" />
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_size_y}" />
+        </geometry>
+      </visual>
+    </link>
+      
+    <gazebo reference="${prefix}_wheel_link" >
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <kp>1000000.0</kp>
+      <kd>100.0</kd>
+      <minDepth>0.001</minDepth>
+    </gazebo>
+    
+    <transmission type="pr2_mechanism_model/SimpleTransmission" name="${prefix}_wheel_trans">
+      <actuator name="${prefix}_motor_link" />
+      <joint name="${prefix}_wheel_joint" />
+      <mechanicalReduction>1.0</mechanicalReduction>
+      <motorTorqueConstant>1</motorTorqueConstant>
+    </transmission>
+  </xacro:macro>
+  <!--******************* End Wheel macro ************************-->
+
+  <!--******************* Start sentry macro ************************-->
+  <xacro:macro name="sentry_macro">    
+    <link name="base_link">
+      <visual>
+          <geometry>
+              <box size="${bodylen} ${bodywidth} ${bodyheight}"/>
+          </geometry>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+      </visual>
+      <collision>
+          <geometry>
+              <box size="${bodylen} ${bodywidth} ${bodyheight}"/>
+          </geometry>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+      <inertial>
+          <mass value="${10*default_mass}" />
+          <inertia ixx="10" ixy="0" ixz="0"
+            iyy="10" iyz="0"
+            izz="10" />
+      </inertial>
+    </link>
+
+	<!-- add a simulated Kinect camera, including visual, collision and inertial properties, and physics simulation-->
+	<link name="kinect_link">
+      <!-- here is the physical body (case) of the camera-->
+      <collision>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+              <box size="0.02 0.1 0.02"/>
+          </geometry>
+      </collision>
+
+      <visual>
+          <origin xyz="0 0 0" rpy="0 0 0" />
+          <geometry>
+              <box size="0.02 0.1 0.02"/>
+          </geometry>
+          <material name="camera_case">
+              <color rgba="0.0 0.0 0.7 1.0"/>
+          </material>
+      </visual>
+
+      <inertial>
+          <mass value="0.1" />
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
+      </inertial>
+  </link>
+
+  <joint name="kinect_joint" type="fixed">
+    	<parent link="base_link" />
+    	<child link="kinect_link" />  
+        <origin rpy="0 0 0" xyz="${bodylen/2} 0 ${bodyheight/2}"/>
+    </joint>
+
+    <!-- kinect depth frame has a different viewpoint; publish it separately--> 
+ 	<!-- here is the gazebo plug-in to simulate a color camera -->
+ 	<!--must refer to the above-defined link to place the camera in space-->
+    <gazebo reference="base_link">
+    <sensor type="depth" name="openni_camera_camera">       
+        <always_on>1</always_on>
+        <visualize>true</visualize>             
+        <camera>
+            <horizontal_fov>1.047</horizontal_fov>  
+            <image>
+                <width>640</width>
+                <height>480</height>
+                <format>R8G8B8</format>
+            </image>
+            <depth_camera>
+
+            </depth_camera>
+            <clip>
+                <near>0.1</near>
+                <far>100</far>
+            </clip>
+        </camera>
+      <!--here is the plug-in that does the work of kinect emulation-->
+       <plugin name="camera_controller" filename="libgazebo_ros_openni_kinect.so">
+            <alwaysOn>true</alwaysOn>
+                <updateRate>1.0</updateRate>
+                <cameraName>kinect</cameraName>
+                <frameName>base_link</frameName>                   
+            <imageTopicName>rgb/image_raw</imageTopicName>
+            <depthImageTopicName>depth/image_raw</depthImageTopicName>
+            <pointCloudTopicName>depth/points</pointCloudTopicName>
+            <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>              
+            <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>            
+            <pointCloudCutoff>0.4</pointCloudCutoff>                
+                <hackBaseline>0.07</hackBaseline>
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            <CxPrime>0.0</CxPrime>
+            <Cx>0.0</Cx>
+            <Cy>0.0</Cy>
+            <focalLength>0.0</focalLength>
+            </plugin>
+    </sensor>
+  </gazebo>  
+
+    <!-- left wheel -->
+    <xacro:tracked_wheel parent="base_link" prefix="left_joint" offset_x= "${0*wheel_spacing}" offset_y = "${wheel_offset_y}" offset_z = "${wheel_offset_z_from_base_link}"/>
+
+    <!-- right wheel -->
+    <xacro:tracked_wheel parent="base_link" prefix="right_joint" offset_x= "${0*wheel_spacing}" offset_y = "-${wheel_offset_y}" offset_z = "${wheel_offset_z_from_base_link}"/>
+        
+    <gazebo>   
+      <plugin name="diffdrive_plugin_multiwheel" filename="libgazebo_ros_diff_drive.so">                
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <torque>50</torque>
+        <robotNamespace>/</robotNamespace>
+        <robotBaseFrame>base_link</robotBaseFrame>
+        <topicName>cmd_vel</topicName>
+        <commandTopic>/cmd_vel</commandTopic>
+        <odometryTopic>odom</odometryTopic>
+        <odometryFrame>odom</odometryFrame>
+        <broadcastTF>1</broadcastTF>
+        <publishWheelTF>true</publishWheelTF>
+        <publishWheelJointState>true</publishWheelJointState>
+        <publishOdometryTf>1</publishOdometryTf>
+        <publishOdometryMsg>1</publishOdometryMsg>
+      </plugin>
+        
+      <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>50.0</updateRate>
+        <bodyName>base_link</bodyName>
+        <topicName>ground_truth/state</topicName>
+        <gaussianNoise>0.01</gaussianNoise>
+        <frameName>world</frameName>
+        <xyzOffsets>0 0 0</xyzOffsets>
+        <rpyOffsets>0 0 0</rpyOffsets>
+      </plugin>
+    </gazebo>
+        
+    <gazebo reference="base_link">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+            
+  </xacro:macro>
+  <!--******************* Start sentry macro ************************-->
+
+  <!-- Run Sentry Macro -->
+  <xacro:sentry_macro />
+</robot>
