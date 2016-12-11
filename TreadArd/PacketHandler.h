@@ -10,24 +10,17 @@ namespace PacketHandler
 // All possible commands to be sent to the arudino
 enum Command
 {
-    MOVE_FORWARD,
-    MOVE_BACKWARD,
-    TURN_C,         //Clockwise
-    TURN_CC,        //Counter ClockWise
-    STOP
+    MOVE_FORWARD = 0U,
+    MOVE_BACKWARD = 1U,
+    TURN_C = 2U,         //Clockwise
+    TURN_CC = 3U,        //Counter ClockWise
+    STOP = 4U
 };
 
-// All Command Packets will have the following struct layout 
-struct CommandPacket
-{
-    Command cmd;
-    int data;
-};
 
+static Command PACKET_COMMAND;
+static int COMMAND_DATA;
 static int MAX_CMD_VAL = 3;
-
-// Static variable to hold the current command 
-static CommandPacket *CURRENT_CMD_PACKET;
 
 // Start serial communication with Raspberry Pi
 void StartSerial()
@@ -38,48 +31,63 @@ void StartSerial()
     {
         // Wait for serial to connect successfully
     };
+    PACKET_COMMAND = (Command)0U;
+    COMMAND_DATA = 0;
 }
 
-// Retrieves the data from the Serial line and sets it to CMD_PACKET
+// Flushes the input buffer
+void serialFlush()
+{
+  while(Serial.available() > 0)
+  {
+    char t = Serial.read();
+  }
+}   
+
+
+// This function is called whenever new data is recieved
 void GetCommandPacket() 
 {
-    // Data is available on serial line
-    if(Serial.available() >= 2 )
+    if(Serial.available() > 0)
     {
         int cmdByte = Serial.read();
+        delay(20);
         if(cmdByte <= MAX_CMD_VAL)
         {
-            CURRENT_CMD_PACKET->cmd = (Command)(cmdByte);
+            PACKET_COMMAND = (Command)(cmdByte);
         }
         // Recieved command was not valid
         else
         {
             // @TODO: Handle error for invalid command
         }
-        CURRENT_CMD_PACKET->data = Serial.read();
+        COMMAND_DATA = Serial.read();
+        delay(20);
+        // Flush any other data that was accidentally loaded
+        serialFlush();
     }
-    // Data is not available on serial line
     else
     {
-        // @TODO: Handle error for no available data on serial line
+      // Error case for when nothing is recieved
     }
+    delay(20);
 }
 
 void RunCommand()
 {
-    switch(CURRENT_CMD_PACKET->cmd)
+    switch(PACKET_COMMAND)
     {
         case MOVE_FORWARD:
-            moveForward(CURRENT_CMD_PACKET->data);
+            moveForward(COMMAND_DATA);
             break;
         case MOVE_BACKWARD:
-            moveBackward(CURRENT_CMD_PACKET->data);
+            moveBackward(COMMAND_DATA);
             break;
         case TURN_C:
-            turnCenterRight(CURRENT_CMD_PACKET->data);
+            turnCenterRight(COMMAND_DATA);
             break;
         case TURN_CC:
-            turnCenterLeft(CURRENT_CMD_PACKET->data);
+            turnCenterLeft(COMMAND_DATA);
             break;
         case STOP:
             motorStop();
@@ -90,6 +98,7 @@ void RunCommand()
             break;
     }
 };
+
 
 // Send any data back to Rasberry Pi
 void SendPacket()

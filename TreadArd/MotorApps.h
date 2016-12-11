@@ -10,63 +10,76 @@
  * Where pwmLvl is a value between 0 to 255 
  */
 
-void motorInit (void){
-    int i;
-    for(i=5;i<=8;i++)
+void motorInit(void)
+{
+    for(int i = 5; i <= 8; i++)
+    {
         pinMode(i, OUTPUT);
+    }
 }
 
-void rightMotorForward (int pwmLvl){
+void rightMotorForward(int pwmLvl)
+{
     analogWrite (5, pwmLvl);
     digitalWrite(7, LOW);
 }
 
-void leftMotorForward (int pwmLvl){
+void leftMotorForward(int pwmLvl)
+{
     analogWrite (6, pwmLvl);
     digitalWrite(8, LOW);
 }
 
-void rightMotorBackward (int pwmLvl){
+void rightMotorBackward(int pwmLvl)
+{
     analogWrite (5, pwmLvl);
     digitalWrite(7, HIGH);
 }
 
-void leftMotorBackward (int pwmLvl){
+void leftMotorBackward(int pwmLvl)
+{
     analogWrite (6, pwmLvl);
     digitalWrite(8, HIGH);
 }
 
-void rightMotorStop (void){
+void rightMotorStop(void)
+{
     analogWrite (5, 0);
     digitalWrite(7, LOW); //redundant
 }
 
-void leftMotorStop (){
+void leftMotorStop()
+{
     analogWrite (6, 0);
     digitalWrite(8, LOW); //redundant
 }
 
-void moveForward (int pwmLvl){
+void moveForward (int pwmLvl)
+{
     rightMotorForward(pwmLvl);
     leftMotorForward(pwmLvl);
 }
 
-void moveBackward (int pwmLvl){
+void moveBackward (int pwmLvl)
+{
     rightMotorBackward(pwmLvl);
     leftMotorBackward(pwmLvl);
 }
 
-void motorStop (void){
+void motorStop (void)
+{
     rightMotorStop();
     leftMotorStop();
 }
 
-void turnCenterRight (int pwmLvl){
+void turnCenterRight (int pwmLvl)
+{
     rightMotorBackward(pwmLvl);
     leftMotorForward(pwmLvl);
 }
 
-void turnCenterLeft (int pwmLvl){
+void turnCenterLeft (int pwmLvl)
+{
     leftMotorBackward(pwmLvl);
     rightMotorForward(pwmLvl);
 }
